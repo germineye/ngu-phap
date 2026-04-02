@@ -129,6 +129,10 @@ async function generateText() {
     parts.forEach((part, i) => {
       const div = document.createElement("div");
       div.className = "result-block";
+      // Khối kết quả thứ 3 (index 2) là bản Formalized Version
+      if (i === 2) {
+          div.classList.add("formal-font");
+      }
       div.style.animationDelay = `${i * 0.2}s`;
       div.innerText = part.trim();
       resultContainer.appendChild(div);
