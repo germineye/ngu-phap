@@ -8,7 +8,7 @@
  * Copyright (c) 2025 germineye
  */
 
-@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600&family=UnifrakturMaguntia&display=swap');
 
 /* Bảng màu được đơn giản hóa để có độ tương phản nhẹ nhàng hơn */
 :root {
@@ -147,4 +147,10 @@ footer {
     color: var(--accent);
     opacity: 0;
     transition: opacity 0.3s ease;
+}
+
+.formal-font {
+    font-family: 'UnifrakturMaguntia', cursive;
+    font-size: 1.4rem; /* Cỡ chữ to hơn tí cho dễ đọc vì font này nhiều nét */
+    letter-spacing: 0.5px;
 }
