@@ -46,6 +46,14 @@ const statusText = document.getElementById("status");
 
 const STORAGE_KEY = 'ngu_phap_api_key';
 
+function getApiErrorMessage(data) {
+  return (
+    data?.error?.message ||
+    data?.message ||
+    "Yêu cầu thất bại. Hãy kiểm tra API key và model rồi thử lại."
+  );
+}
+
 function loadApiKey() {
   const savedKey = localStorage.getItem(STORAGE_KEY);
   if (savedKey) {
@@ -98,6 +106,9 @@ async function generateText() {
         }),
       });
       const data = await response.json();
+      if (!response.ok) {
+        throw new Error(getApiErrorMessage(data));
+      }
       content = data.choices?.[0]?.message?.content?.trim() || "";
     } else {
       const geminiModel = modelName;
@@ -114,10 +125,14 @@ async function generateText() {
         }
       );
       const data = await response.json();
+      if (!response.ok) {
+        throw new Error(getApiErrorMessage(data));
+      }
       content = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "";
     }
 
     statusText.textContent = "";
+    statusText.style.opacity = "0";
 
     const parts = content.split(/\n---\n+/).filter(Boolean);
     if (!parts.length) {
@@ -140,11 +155,19 @@ async function generateText() {
   } catch (err) {
     console.error(err);
     statusText.textContent = "Error: " + err.message;
+    statusText.style.opacity = "1";
   }
 }
 
 userInput.addEventListener("keydown", (e) => {
   if (e.key === "Enter" && !e.shiftKey) {
+    e.preventDefault();
+    generateText();
+  }
+});
+
+apiKeyInput.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
     e.preventDefault();
     generateText();
   }
