@@ -8,9 +8,10 @@
  * Copyright (c) 2025 germineye
  */
 
-// Chặn chuột phải và các phím tắt F12, Ctrl+Shift+I, Ctrl+U
+// --- TÍNH NĂNG BẢO MẬT: CHẶN CHUỘT PHẢI & PHÍM TẮT SOI CODE ---
 document.addEventListener('contextmenu', e => e.preventDefault());
 document.addEventListener('keydown', e => {
+  // Chặn F12, Ctrl+Shift+I (Inspector), Ctrl+Shift+J (Console), Ctrl+U (View Source)
   if (e.key === 'F12' || 
      (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C')) || 
      (e.ctrlKey && e.key === 'U')) {
@@ -22,7 +23,7 @@ const openAIEndpoint = "https://api.openai.com/v1/chat/completions";
 const geminiEndpoint = "https://generativelanguage.googleapis.com/v1beta/models";
 let apiKey = "";
 let modelType = "gemini";
-let modelName = "gemini-2.5-flash";
+let modelName = "gemini-3-flash-preview"; // Default theo model mới nhất trong ảnh
 
 const editorPrompt = `
 You are an expert multilingual assistant.
@@ -44,7 +45,7 @@ DETERMINE THE INPUT LANGUAGE:
 
 RULES:
 - ⚠️ Output ONLY the rewritten/translated sentences.
-- ⚠️ Separate each version strictly with the delimiter: \n---\n
+- ⚠️ Separate each version strictly with the delimiter: \\n---\\n
 - ⚠️ DO NOT add any explanation, titles, or introductions.
 `;
 
@@ -69,16 +70,15 @@ function saveApiKey(key) {
 
 async function generateText() {
   const text = userInput.value.trim();
-  
   apiKey = apiKeyInput.value.trim();
 
   if (!apiKey) {
     alert("API key đâu?");
+    apiKeyInput.focus();
     return;
   }
   
   saveApiKey(apiKey);
-  
   if (!text) return;
 
   modelName = modelSelect.value;
@@ -90,9 +90,10 @@ async function generateText() {
 
   try {
     let content = "";
+    let response;
 
     if (modelType === "gpt") {
-      const response = await fetch(openAIEndpoint, {
+      response = await fetch(openAIEndpoint, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -107,53 +108,60 @@ async function generateText() {
           temperature: 0.7,
         }),
       });
-      const data = await response.json();
-      content = data.choices?.[0]?.message?.content?.trim() || "";
     } else {
-      const geminiModel = modelName;
-      const response = await fetch(
-        `${geminiEndpoint}/${geminiModel}:generateContent?key=${apiKey}`,
+      response = await fetch(
+        `${geminiEndpoint}/${modelName}:generateContent?key=${apiKey}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             contents: [
-              { role: "user", parts: [{ text: `${editorPrompt}\n\nUser input:\n${text}` }] },
+              { role: "user", parts: [{ text: `${editorPrompt}\\n\\nUser input:\\n\${text}` }] },
             ],
           }),
         }
       );
-      const data = await response.json();
-      content = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "";
+    }
+
+    const data = await response.json();
+
+    // Bắt lỗi rành mạch từ API (Sai key, hết hạn, model không tồn tại...)
+    if (!response.ok) {
+        throw new Error(data.error?.message || data.error?.code || `HTTP Error \${response.status}`);
+    }
+
+    if (modelType === "gpt") {
+        content = data.choices?.[0]?.message?.content?.trim() || "";
+    } else {
+        content = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "";
     }
 
     statusText.textContent = "";
 
-    const parts = content.split(/\n---\n+/).filter(Boolean);
+    const parts = content.split(/\\n---\\n+/).filter(Boolean);
     if (!parts.length) {
-      resultContainer.innerHTML =
-        '<div class="result-block">⚠️ có vẻ bị lỗi, hãy kiểm tra và thử lại</div>';
+      resultContainer.innerHTML = '<div class="result-block">⚠️ Model trả về kết quả rỗng hoặc không đúng định dạng.</div>';
       return;
     }
 
     parts.forEach((part, i) => {
       const div = document.createElement("div");
       div.className = "result-block";
-      // Khối kết quả thứ 3 (index 2) là bản Formalized Version
-      if (i === 2) {
-          div.classList.add("formal-font");
-      }
-      div.style.animationDelay = `${i * 0.2}s`;
-      div.innerText = part.trim();
+      // Version thứ 3 là Formal Font
+      if (i === 2) div.classList.add("formal-font");
+      div.style.animationDelay = `\${i * 0.2}s`;
+      div.innerText = part.trim(); // innerText để chống XSS
       resultContainer.appendChild(div);
     });
+
   } catch (err) {
     console.error(err);
-    statusText.textContent = "Error: " + err.message;
+    statusText.textContent = "";
+    resultContainer.innerHTML = `<div class="result-block" style="border: 1px solid var(--accent);">⚠️ Lỗi: \${err.message}</div>`;
   }
 }
 
-// Bắt sự kiện Enter cho ô nhập API key
+// Vá lỗi UX: Bấm Enter ở ô API Key sẽ nhảy xuống ô nhập liệu
 apiKeyInput.addEventListener("keydown", (e) => {
   if (e.key === "Enter") {
     e.preventDefault();
