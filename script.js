@@ -45,7 +45,8 @@ DETERMINE THE INPUT LANGUAGE:
 
 RULES:
 - ⚠️ Output ONLY the rewritten/translated sentences.
-- ⚠️ Separate each version strictly with the delimiter: \\n---\\n
+- ⚠️ Separate each version strictly with the delimiter:
+---
 - ⚠️ DO NOT add any explanation, titles, or introductions.
 `;
 
@@ -116,7 +117,7 @@ async function generateText() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             contents: [
-              { role: "user", parts: [{ text: `${editorPrompt}\\n\\nUser input:\\n\${text}` }] },
+              { role: "user", parts: [{ text: `${editorPrompt}\n\nUser input:\n${text}` }] },
             ],
           }),
         }
@@ -127,7 +128,7 @@ async function generateText() {
 
     // Bắt lỗi rành mạch từ API (Sai key, hết hạn, model không tồn tại...)
     if (!response.ok) {
-        throw new Error(data.error?.message || data.error?.code || `HTTP Error \${response.status}`);
+        throw new Error(data.error?.message || data.error?.code || `HTTP Error ${response.status}`);
     }
 
     if (modelType === "gpt") {
@@ -138,7 +139,8 @@ async function generateText() {
 
     statusText.textContent = "";
 
-    const parts = content.split(/\\n---\\n+/).filter(Boolean);
+    // Fix regex chia đoạn để nhận diện mượt hơn
+    const parts = content.split(/\n+---\n+/).filter(Boolean);
     if (!parts.length) {
       resultContainer.innerHTML = '<div class="result-block">⚠️ Model trả về kết quả rỗng hoặc không đúng định dạng.</div>';
       return;
@@ -149,7 +151,7 @@ async function generateText() {
       div.className = "result-block";
       // Version thứ 3 là Formal Font
       if (i === 2) div.classList.add("formal-font");
-      div.style.animationDelay = `\${i * 0.2}s`;
+      div.style.animationDelay = `${i * 0.2}s`;
       div.innerText = part.trim(); // innerText để chống XSS
       resultContainer.appendChild(div);
     });
@@ -157,7 +159,7 @@ async function generateText() {
   } catch (err) {
     console.error(err);
     statusText.textContent = "";
-    resultContainer.innerHTML = `<div class="result-block" style="border: 1px solid var(--accent);">⚠️ Lỗi: \${err.message}</div>`;
+    resultContainer.innerHTML = `<div class="result-block" style="border: 1px solid var(--accent);">⚠️ Lỗi: ${err.message}</div>`;
   }
 }
 
