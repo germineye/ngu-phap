@@ -8,6 +8,16 @@
  * Copyright (c) 2025 germineye
  */
 
+// Chặn chuột phải và các phím tắt F12, Ctrl+Shift+I, Ctrl+U
+document.addEventListener('contextmenu', e => e.preventDefault());
+document.addEventListener('keydown', e => {
+  if (e.key === 'F12' || 
+     (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C')) || 
+     (e.ctrlKey && e.key === 'U')) {
+    e.preventDefault();
+  }
+});
+
 const openAIEndpoint = "https://api.openai.com/v1/chat/completions";
 const geminiEndpoint = "https://generativelanguage.googleapis.com/v1beta/models";
 let apiKey = "";
@@ -34,7 +44,7 @@ DETERMINE THE INPUT LANGUAGE:
 
 RULES:
 - ⚠️ Output ONLY the rewritten/translated sentences.
-- ⚠️ Separate each version strictly with the delimiter: \\n---\\n
+- ⚠️ Separate each version strictly with the delimiter: \n---\n
 - ⚠️ DO NOT add any explanation, titles, or introductions.
 `;
 
@@ -142,6 +152,14 @@ async function generateText() {
     statusText.textContent = "Error: " + err.message;
   }
 }
+
+// Bắt sự kiện Enter cho ô nhập API key
+apiKeyInput.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    userInput.focus();
+  }
+});
 
 userInput.addEventListener("keydown", (e) => {
   if (e.key === "Enter" && !e.shiftKey) {
