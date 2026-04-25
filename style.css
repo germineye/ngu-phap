@@ -154,3 +154,41 @@ footer {
     font-size: 1.4rem; /* Cỡ chữ to hơn tí cho dễ đọc vì font này nhiều nét */
     letter-spacing: 0.5px;
 }
+
+/* Thêm con trỏ chuột và hiệu ứng bấm cho kết quả */
+.result-block {
+    cursor: pointer;
+    transition: transform 0.1s, filter 0.2s;
+}
+
+.result-block:hover {
+    filter: brightness(1.2);
+}
+
+.result-block:active {
+    transform: scale(0.98);
+}
+
+/* Khung thông báo đã copy */
+.toast-msg {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: var(--accent);
+    color: #000;
+    padding: 10px 20px;
+    border-radius: 30px;
+    font-weight: 600;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+    z-index: 1000;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+}
+
+.toast-msg.show {
+    opacity: 1;
+    visibility: visible;
+    bottom: 50px;
+}
