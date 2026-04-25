@@ -11,7 +11,6 @@
 // --- TÍNH NĂNG BẢO MẬT: CHẶN CHUỘT PHẢI & PHÍM TẮT SOI CODE ---
 document.addEventListener('contextmenu', e => e.preventDefault());
 document.addEventListener('keydown', e => {
-  // Chặn F12, Ctrl+Shift+I (Inspector), Ctrl+Shift+J (Console), Ctrl+U (View Source)
   if (e.key === 'F12' || 
      (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C')) || 
      (e.ctrlKey && e.key === 'U')) {
@@ -23,7 +22,7 @@ const openAIEndpoint = "https://api.openai.com/v1/chat/completions";
 const geminiEndpoint = "https://generativelanguage.googleapis.com/v1beta/models";
 let apiKey = "";
 let modelType = "gemini";
-let modelName = "gemini-3-flash-preview"; // Default theo model mới nhất trong ảnh
+let modelName = "gemini-3-flash-preview"; 
 
 const editorPrompt = `
 You are an expert multilingual assistant.
@@ -57,6 +56,22 @@ const resultContainer = document.getElementById("result");
 const statusText = document.getElementById("status");
 
 const STORAGE_KEY = 'ngu_phap_api_key';
+
+// --- KHUNG THÔNG BÁO ĐÃ COPY ---
+const toast = document.createElement("div");
+toast.className = "toast-msg";
+toast.innerText = "✨ đã copy!";
+document.body.appendChild(toast);
+
+let toastTimeout;
+function showToast() {
+  toast.classList.add("show");
+  clearTimeout(toastTimeout);
+  toastTimeout = setTimeout(() => {
+      toast.classList.remove("show");
+  }, 2000);
+}
+// --------------------------------
 
 function loadApiKey() {
   const savedKey = localStorage.getItem(STORAGE_KEY);
@@ -126,7 +141,6 @@ async function generateText() {
 
     const data = await response.json();
 
-    // Bắt lỗi rành mạch từ API (Sai key, hết hạn, model không tồn tại...)
     if (!response.ok) {
         throw new Error(data.error?.message || data.error?.code || `HTTP Error ${response.status}`);
     }
@@ -139,7 +153,6 @@ async function generateText() {
 
     statusText.textContent = "";
 
-    // Fix regex chia đoạn để nhận diện mượt hơn
     const parts = content.split(/\n+---\n+/).filter(Boolean);
     if (!parts.length) {
       resultContainer.innerHTML = '<div class="result-block">⚠️ Model trả về kết quả rỗng hoặc không đúng định dạng.</div>';
@@ -149,10 +162,20 @@ async function generateText() {
     parts.forEach((part, i) => {
       const div = document.createElement("div");
       div.className = "result-block";
-      // Version thứ 3 là Formal Font
       if (i === 2) div.classList.add("formal-font");
       div.style.animationDelay = `${i * 0.2}s`;
-      div.innerText = part.trim(); // innerText để chống XSS
+      div.innerText = part.trim(); 
+
+      // SỰ KIỆN CLICK ĐỂ COPY
+      div.addEventListener("click", async () => {
+        try {
+          await navigator.clipboard.writeText(div.innerText);
+          showToast();
+        } catch (err) {
+          console.error("Lỗi copy:", err);
+        }
+      });
+
       resultContainer.appendChild(div);
     });
 
@@ -163,7 +186,6 @@ async function generateText() {
   }
 }
 
-// Vá lỗi UX: Bấm Enter ở ô API Key sẽ nhảy xuống ô nhập liệu
 apiKeyInput.addEventListener("keydown", (e) => {
   if (e.key === "Enter") {
     e.preventDefault();
