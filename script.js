@@ -150,23 +150,28 @@ async function handleProcessLanguage(inputText) {
 
 // Logic bắt sự kiện từ nút bấm trên HTML gốc của mày
 // (Hãy đảm bảo ID của nút bấm và ô Textarea khớp với các dòng dưới đây)
-document.addEventListener('DOMContentLoaded', () => {
-    const submitBtn = document.querySelector('button') || document.getElementById('submit-btn');
-    const textarea = document.querySelector('textarea') || document.getElementById('input-text');
+// Ép trực tiếp từ cấp độ document, chấp mọi loại selector hay ID!
+document.addEventListener('keydown', function (e) {
+    // 1. Kiểm tra xem có đúng là mày đang gõ trong một thẻ TEXTAREA nào đó không
+    if (e.target && e.target.tagName === 'TEXTAREA') {
+        
+        // 2. Nếu bấm Enter và KHÔNG giữ phím Shift
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault(); // CHẶN ĐỨNG HOÀN TOÀN hành vi xuống dòng mặc định
 
-    if (submitBtn && textarea) {
-        // 1. Khi click chuột vào nút Submit thì chạy
-        submitBtn.addEventListener('click', () => {
+            // Chạy hàm xử lý AI luôn và ngay
+            handleProcessLanguage(e.target.value);
+        }
+    }
+});
+
+// Vẫn giữ nút bấm Submit cho chuột click
+document.addEventListener('click', function (e) {
+    // Nếu click trúng nút button hoặc submit trên trang
+    if (e.target && (e.target.tagName === 'BUTTON' || e.target.id === 'submit-btn')) {
+        const textarea = document.querySelector('textarea');
+        if (textarea) {
             handleProcessLanguage(textarea.value);
-        });
-
-        // 2. Bắt sự kiện bấm phím Enter trên ô nhập liệu
-        textarea.addEventListener('keydown', (e) => {
-            // Nếu bấm Enter và KHÔNG giữ phím Shift
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault(); // Chặn không cho nó tự xuống dòng
-                handleProcessLanguage(textarea.value); // Phù phép luôn!
-            }
-        });
+        }
     }
 });
