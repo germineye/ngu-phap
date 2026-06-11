@@ -1,177 +1,150 @@
-// ==========================================================================
-// 🛡️ 1. HỆ THỐNG BẢO MẬT & TRẢI NGHIỆM NGƯỜI DÙNG (Giữ nguyên từ bản gốc của mày)
-// ==========================================================================
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * This file is part of ngu-phap.
+ *
+ * Copyright (c) 2025 germineye
+ */
 
-// Chặn click chuột phải
-document.addEventListener('contextmenu', event => event.preventDefault());
-
-// Chặn F12 và các tổ hợp phím soi code
-document.addEventListener('keydown', function(e) {
-    if (e.key === "F12" || 
-        (e.ctrlKey && e.shiftKey && (e.key === "I" || e.key === "J" || e.key === "C")) || 
-        (e.ctrlKey && e.key === "U")) {
-        e.preventDefault();
-        return false;
-    }
+// --- TÍNH NĂNG BẢO MẬT: CHẶN CHUỘT PHẢI & PHÍM TẮT SOI CODE ---
+document.addEventListener('contextmenu', e => e.preventDefault());
+document.addEventListener('keydown', e => {
+  if (e.key === 'F12' || 
+     (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C')) || 
+     (e.ctrlKey && e.key === 'U')) {
+    e.preventDefault();
+  }
 });
 
-// Hàm hiển thị thông báo Toast khi copy thành công
-function showToast(message = "✨ đã copy!") {
-    let toast = document.getElementById('toast');
-    if (!toast) {
-        toast = document.createElement('div');
-        toast = document.body.appendChild(toast);
-        toast.id = 'toast';
-        // Style cơ bản cho toast nếu CSS cũ chưa có
-        toast.style.position = 'fixed';
-        toast.style.bottom = '20px';
-        toast.style.right = '20px';
-        toast.style.background = '#FFA8BC';
-        toast.style.color = '#49494B';
-        toast.style.padding = '10px 20px';
-        toast.style.borderRadius = '8px';
-        toast.style.fontFamily = 'Be Vietnam Pro';
-        toast.style.fontWeight = 'bold';
-        toast.style.zIndex = '9999';
-    }
-    toast.innerText = message;
-    toast.style.display = 'block';
-    setTimeout(() => { toast.style.display = 'none'; }, 2000);
-}
+// Prompt ép con Gemini Nano cục bộ xuất dữ liệu chuẩn format mảng phân tách bằng "---"
+const editorPrompt = `
+You are an expert multilingual assistant operating on-device.
 
-// ==========================================================================
-// 🧠 2. PHẦN XỬ LÝ AI BẰNG CHROME BUILT-IN API (Cắt máu ăn thề với Gemini Nano)
-// ==========================================================================
+DETERMINE THE INPUT LANGUAGE:
+1. If the input is in ENGLISH or FRENCH:
+   - Act as an EDITOR.
+   - Provide exactly 3 versions:
+     a) Grammar Correction Only: Fix only grammatical or spelling mistakes while preserving the original tone, mood, and word choice as much as possible.
+     b) Natural Paraphrase: Correct grammar and rephrase slightly so the sentence sounds fluent and natural to a native speaker, while keeping the same nuance and intent as the original.
+     c) Formalized Version (Conditional): If the text contains slang, abbreviations, or overly casual phrasing, rewrite it into a grammatically correct and moderately formal version (not overly stiff). If the input is already formal enough, skip this version.
+   - All versions must be in the SAME language as the input.
 
-// Cấu hình System Prompt tối thượng để ép Gemini Nano ra đúng format ban đầu của app
-const SYSTEM_PROMPT = `
-Mày là một chuyên gia ngôn ngữ học tối thượng, hoạt động độc lập trên thiết bị. Nhiệm vụ của mày là kiểm tra chuỗi văn bản đầu vào và xử lý theo đúng quy tắc nghiêm ngặt sau:
+2. If the input is in ANY OTHER LANGUAGE (e.g., Vietnamese, Japanese, etc.):
+   - Act as a TRANSLATOR to English.
+   - Provide exactly 2 versions:
+     a) Natural Translation: Sounds fluent and natural to a native speaker.
+     b) Professional Translation: Formal and structured English.
 
-1. NẾU ĐẦU VÀO LÀ TIẾNG ANH (ENGLISH) HOẶC TIẾNG PHÁP (FRENCH):
-Sửa lỗi ngữ pháp và trả về CHÍNH XÁC 3 phần, phân tách nhau bằng duy nhất dòng "---". Không thêm bất kỳ lời giải thích hay chữ thừa thãi nào ngoài 3 phần này:
-Phần 1: Bản sửa lỗi ngữ pháp thuần túy (Grammar Correction Only).
+RULES:
+- ⚠️ Output ONLY the rewritten/translated sentences.
+- ⚠️ Separate each version strictly with the delimiter:
 ---
-Phần 2: Bản diễn đạt tự nhiên, bản xứ (Natural Paraphrase).
----
-Phần 3: Bản văn phong trang trọng, cổ điển (Formalized Version).
-
-2. NẾU ĐẦU VÀO LÀ BẤT KỲ NGÔN NGỮ NÀO KHÁC (Tiếng Việt, Tiếng Nhật, v.v.):
-Dịch chuỗi đó sang tiếng Anh và trả về CHÍNH XÁC 2 phần, phân tách nhau bằng duy nhất dòng "---". Không thêm lời giải thích nào khác:
-Phần 1: Bản dịch tự nhiên văn phong giao tiếp (Natural Translation).
----
-Phần 2: Bản dịch chuyên nghiệp, trang trọng (Professional Translation).
-
-LƯU Ý: Tuyệt đối tuân thủ dấu phân tách "---". Không kèm tiêu đề kiểu "Phần 1:", không kèm markdown bôi đậm tự chế. Chỉ xuất ra nội dung text và dấu phân tách.
+- ⚠️ DO NOT add any explanation, titles, or introductions.
 `;
+
+// Khởi tạo các phần tử DOM chính xác theo file index.html của mày
+const userInput = document.getElementById("user-input");
+const resultContainer = document.getElementById("result");
+const statusText = document.getElementById("status");
+
+// --- KHUNG THÔNG BÁO ĐÃ COPY (Giữ nguyên UI ban đầu) ---
+const toast = document.createElement("div");
+toast.className = "toast-msg";
+toast.innerText = "✨ đã copy!";
+document.body.appendChild(toast);
+
+let toastTimeout;
+function showToast() {
+  toast.classList.add("show");
+  clearTimeout(toastTimeout);
+  toastTimeout = setTimeout(() => {
+      toast.classList.remove("show");
+  }, 2000);
+}
 
 let aiSession = null;
 
-// Hàm khởi tạo và kiểm tra AI trong trình duyệt (Tránh lợn què)
+// Hàm khởi tạo kết nối với Gemini Nano trong Chrome
 async function initBuiltInAI() {
     if (!window.ai || !window.ai.languageModel) {
-        throw new Error("Trình duyệt của mày chưa bật Chrome Built-in AI flag. Vào chrome://flags để bật đi tao xem nào!");
+        throw new Error("Trình duyệt chưa bật Chrome Built-in AI flag. Vào chrome://flags bật 'Prompt API for Gemini Nano' với 'Optimization Guide On-Device Model' lên hộ tao cái!");
     }
 
     const capabilities = await window.ai.languageModel.capabilities();
     if (capabilities.available === 'no') {
-        throw new Error("Model Gemini Nano chưa được tải về máy hoặc phần cứng không hỗ trợ.");
+        throw new Error("Model Gemini Nano chưa sẵn sàng hoặc phần cứng không hỗ trợ. Thử check lại trang thái tải model ngầm của Chrome.");
     }
 
-    // Nếu chưa tạo session hoặc session cũ bị chết, tạo mới với System Prompt định hình phong cách
     if (!aiSession) {
         aiSession = await window.ai.languageModel.create({
-            systemPrompt: SYSTEM_PROMPT,
-            temperature: 0.3, // Để kết quả ra chuẩn xác, ít bị "ngáo" văn phong
+            systemPrompt: editorPrompt,
+            temperature: 0.3, // Thấp để nó ra chuẩn xác, không bị biến tấu bậy bạ
             topK: 3
         });
     }
     return aiSession;
 }
 
-// Hàm xử lý chính khi người dùng nhấn nút Submit (hoặc Trigger dịch thuật)
-async function handleProcessLanguage(inputText) {
-    const resultContainer = document.getElementById('result-container'); // Thay ID này bằng ID vùng chứa kết quả của mày
-    if (!inputText.trim()) return;
+// Hàm xử lý chính khi người dùng nhấn Enter để chạy AI cục bộ
+async function generateText() {
+  const text = userInput.value.trim();
+  if (!text) return;
 
-    try {
-        if (resultContainer) resultContainer.innerHTML = "<em>Đang rặn chữ cục bộ bằng Gemini Nano... Wait a sec...</em>";
+  resultContainer.innerHTML = "";
+  statusText.textContent = "đang xử lý cục bộ bằng Gemini Nano...";
+  statusText.style.opacity = "1";
 
-        // Khởi chạy AI cục bộ
-        const session = await initBuiltInAI();
-        
-        // Bắn prompt cho Nano xử lý
-        const rawResponse = await session.prompt(inputText);
-        
-        // Xóa sạch container cũ để render các block mới
-        if (resultContainer) {
-            resultContainer.innerHTML = "";
-            
-            // Tách các khối bằng dấu "---" như Nano đã được ép format
-            const blocks = rawResponse.split('---');
-            
-            blocks.forEach((blockText, index) => {
-                const trimmedText = blockText.trim();
-                if (!trimmedText) return;
+  try {
+    const session = await initBuiltInAI();
+    const content = await session.prompt(text);
 
-                // Tạo thẻ bọc nội dung tương thích với style.css cũ của mày
-                const blockDiv = document.createElement('div');
-                blockDiv.className = `result-block block-${index + 1}`;
-                blockDiv.innerText = trimmedText;
-                
-                // Giữ nguyên font Gothic độc quyền cho block thứ 3 nếu là edit tiếng Anh/Pháp
-                if (index === 2) {
-                    blockDiv.style.fontFamily = "'UnifrakturMaguntia', serif";
-                    blockDiv.style.fontSize = "1.5rem";
-                } else {
-                    blockDiv.style.fontFamily = "'Be Vietnam Pro', sans-serif";
-                }
+    statusText.textContent = "";
 
-                // Tính năng Click-to-copy bá đạo ban đầu của mày
-                blockDiv.style.cursor = 'pointer';
-                blockDiv.addEventListener('click', () => {
-                    navigator.clipboard.writeText(trimmedText);
-                    showToast();
-                });
-
-                resultContainer.appendChild(blockDiv);
-            });
-        }
-
-    } catch (error) {
-        console.error("Lỗi AI rồi mày ơi:", error);
-        if (resultContainer) {
-            resultContainer.innerHTML = `<div style="color: #FFA8BC; padding: 10px;">
-                ❌ Lỗi: ${error.message}<br>
-                Mở Console (nếu mày lách được trình chặn của chính mày) để xem chi tiết.
-            </div>`;
-        }
+    // Tách chuỗi theo dấu "---" đồng thời dọn khoảng trống thừa
+    const parts = content.split('---').map(p => p.trim()).filter(Boolean);
+    if (!parts.length) {
+      resultContainer.innerHTML = '<div class="result-block">⚠️ Model trả về kết quả rỗng hoặc không đúng định dạng.</div>';
+      return;
     }
+
+    parts.forEach((part, i) => {
+      const div = document.createElement("div");
+      div.className = "result-block";
+      
+      // Áp font Gothic trang trọng cho khối thứ 3 nếu có
+      if (i === 2) div.classList.add("formal-font");
+      div.style.animationDelay = `${i * 0.2}s`;
+      div.innerText = part; 
+
+      // SỰ KIỆN CLICK ĐỂ COPY RỒI HIỆN TOAST
+      div.addEventListener("click", async () => {
+        try {
+          await navigator.clipboard.writeText(div.innerText);
+          showToast();
+        } catch (err) {
+          console.error("Lỗi copy:", err);
+        }
+      });
+
+      resultContainer.appendChild(div);
+    });
+
+  } catch (err) {
+    console.error(err);
+    statusText.textContent = "";
+    resultContainer.innerHTML = `<div class="result-block" style="border: 1px solid var(--accent);">⚠️ Lỗi: ${err.message}</div>`;
+    alert("Lỗi rồi mày ơi: " + err.message);
+  }
 }
 
-// Logic bắt sự kiện từ nút bấm trên HTML gốc của mày
-// (Hãy đảm bảo ID của nút bấm và ô Textarea khớp với các dòng dưới đây)
-// Ép trực tiếp từ cấp độ document, chấp mọi loại selector hay ID!
-document.addEventListener('keydown', function (e) {
-    // 1. Kiểm tra xem có đúng là mày đang gõ trong một thẻ TEXTAREA nào đó không
-    if (e.target && e.target.tagName === 'TEXTAREA') {
-        
-        // 2. Nếu bấm Enter và KHÔNG giữ phím Shift
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault(); // CHẶN ĐỨNG HOÀN TOÀN hành vi xuống dòng mặc định
-
-            // Chạy hàm xử lý AI luôn và ngay
-            handleProcessLanguage(e.target.value);
-        }
-    }
-});
-
-// Vẫn giữ nút bấm Submit cho chuột click
-document.addEventListener('click', function (e) {
-    // Nếu click trúng nút button hoặc submit trên trang
-    if (e.target && (e.target.tagName === 'BUTTON' || e.target.id === 'submit-btn')) {
-        const textarea = document.querySelector('textarea');
-        if (textarea) {
-            handleProcessLanguage(textarea.value);
-        }
-    }
-});
+// BẮT SỰ KIỆN ENTER CHUẨN CHỈ TRÊN TEXTAREA (SHIFT + ENTER LÀ XUỐNG DÒNG)
+if (userInput) {
+    userInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault(); // Khóa cứng hành vi nhảy xuống dòng mặc định
+        generateText(); // Phù phép ra kết quả luôn
+      }
+    });
+}
