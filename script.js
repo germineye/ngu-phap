@@ -155,8 +155,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const textarea = document.querySelector('textarea') || document.getElementById('input-text');
 
     if (submitBtn && textarea) {
+        // 1. Khi click chuột vào nút Submit thì chạy
         submitBtn.addEventListener('click', () => {
             handleProcessLanguage(textarea.value);
+        });
+
+        // 2. Bắt sự kiện bấm phím Enter trên ô nhập liệu
+        textarea.addEventListener('keydown', (e) => {
+            // Nếu bấm Enter và KHÔNG giữ phím Shift
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault(); // Chặn không cho nó tự xuống dòng
+                handleProcessLanguage(textarea.value); // Phù phép luôn!
+            }
         });
     }
 });
