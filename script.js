@@ -18,9 +18,14 @@ document.addEventListener('keydown', e => {
   }
 });
 
-// Prompt ép con Gemini Nano cục bộ xuất dữ liệu chuẩn format mảng phân tách bằng "---"
+const openAIEndpoint = "https://api.openai.com/v1/chat/completions";
+const geminiEndpoint = "https://generativelanguage.googleapis.com/v1beta/models";
+let apiKey = "";
+let modelType = "gemini";
+let modelName = "gemini-3-flash-preview"; 
+
 const editorPrompt = `
-You are an expert multilingual assistant operating on-device.
+You are an expert multilingual assistant.
 
 DETERMINE THE INPUT LANGUAGE:
 1. If the input is in ENGLISH or FRENCH:
@@ -44,12 +49,15 @@ RULES:
 - ⚠️ DO NOT add any explanation, titles, or introductions.
 `;
 
-// Khởi tạo các phần tử DOM chính xác theo file index.html của mày
+const apiKeyInput = document.getElementById("api-key");
+const modelSelect = document.getElementById("model-select");
 const userInput = document.getElementById("user-input");
 const resultContainer = document.getElementById("result");
 const statusText = document.getElementById("status");
 
-// --- KHUNG THÔNG BÁO ĐÃ COPY (Giữ nguyên UI ban đầu) ---
+const STORAGE_KEY = 'ngu_phap_api_key';
+
+// --- KHUNG THÔNG BÁO ĐÃ COPY ---
 const toast = document.createElement("div");
 toast.className = "toast-msg";
 toast.innerText = "✨ đã copy!";
@@ -63,47 +71,89 @@ function showToast() {
       toast.classList.remove("show");
   }, 2000);
 }
+// --------------------------------
 
-let aiSession = null;
-
-// Hàm khởi tạo kết nối với Gemini Nano trong Chrome
-async function initBuiltInAI() {
-    if (!window.ai || !window.ai.languageModel) {
-        throw new Error("Trình duyệt chưa bật Chrome Built-in AI flag. Vào chrome://flags bật 'Prompt API for Gemini Nano' với 'Optimization Guide On-Device Model' lên hộ tao cái!");
-    }
-
-    const capabilities = await window.ai.languageModel.capabilities();
-    if (capabilities.available === 'no') {
-        throw new Error("Model Gemini Nano chưa sẵn sàng hoặc phần cứng không hỗ trợ. Thử check lại trang thái tải model ngầm của Chrome.");
-    }
-
-    if (!aiSession) {
-        aiSession = await window.ai.languageModel.create({
-            systemPrompt: editorPrompt,
-            temperature: 0.3, // Thấp để nó ra chuẩn xác, không bị biến tấu bậy bạ
-            topK: 3
-        });
-    }
-    return aiSession;
+function loadApiKey() {
+  const savedKey = localStorage.getItem(STORAGE_KEY);
+  if (savedKey) {
+    apiKeyInput.value = savedKey;
+  }
 }
 
-// Hàm xử lý chính khi người dùng nhấn Enter để chạy AI cục bộ
+function saveApiKey(key) {
+  localStorage.setItem(STORAGE_KEY, key);
+}
+
 async function generateText() {
   const text = userInput.value.trim();
+  apiKey = apiKeyInput.value.trim();
+
+  if (!apiKey) {
+    alert("API key đâu?");
+    apiKeyInput.focus();
+    return;
+  }
+  
+  saveApiKey(apiKey);
   if (!text) return;
 
+  modelName = modelSelect.value;
+  modelType = modelName.startsWith("gemini") ? "gemini" : "gpt";
+
   resultContainer.innerHTML = "";
-  statusText.textContent = "đang xử lý cục bộ bằng Gemini Nano...";
+  statusText.textContent = "đang xử lý...";
   statusText.style.opacity = "1";
 
   try {
-    const session = await initBuiltInAI();
-    const content = await session.prompt(text);
+    let content = "";
+    let response;
+
+    if (modelType === "gpt") {
+      response = await fetch(openAIEndpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model: modelName,
+          messages: [
+            { role: "system", content: editorPrompt },
+            { role: "user", content: text },
+          ],
+          temperature: 0.7,
+        }),
+      });
+    } else {
+      response = await fetch(
+        `${geminiEndpoint}/${modelName}:generateContent?key=${apiKey}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [
+              { role: "user", parts: [{ text: `${editorPrompt}\n\nUser input:\n${text}` }] },
+            ],
+          }),
+        }
+      );
+    }
+
+    const data = await response.json();
+
+    if (!response.ok) {
+        throw new Error(data.error?.message || data.error?.code || `HTTP Error ${response.status}`);
+    }
+
+    if (modelType === "gpt") {
+        content = data.choices?.[0]?.message?.content?.trim() || "";
+    } else {
+        content = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "";
+    }
 
     statusText.textContent = "";
 
-    // Tách chuỗi theo dấu "---" đồng thời dọn khoảng trống thừa
-    const parts = content.split('---').map(p => p.trim()).filter(Boolean);
+    const parts = content.split(/\n+---\n+/).filter(Boolean);
     if (!parts.length) {
       resultContainer.innerHTML = '<div class="result-block">⚠️ Model trả về kết quả rỗng hoặc không đúng định dạng.</div>';
       return;
@@ -112,13 +162,11 @@ async function generateText() {
     parts.forEach((part, i) => {
       const div = document.createElement("div");
       div.className = "result-block";
-      
-      // Áp font Gothic trang trọng cho khối thứ 3 nếu có
       if (i === 2) div.classList.add("formal-font");
       div.style.animationDelay = `${i * 0.2}s`;
-      div.innerText = part; 
+      div.innerText = part.trim(); 
 
-      // SỰ KIỆN CLICK ĐỂ COPY RỒI HIỆN TOAST
+      // SỰ KIỆN CLICK ĐỂ COPY
       div.addEventListener("click", async () => {
         try {
           await navigator.clipboard.writeText(div.innerText);
@@ -135,16 +183,21 @@ async function generateText() {
     console.error(err);
     statusText.textContent = "";
     resultContainer.innerHTML = `<div class="result-block" style="border: 1px solid var(--accent);">⚠️ Lỗi: ${err.message}</div>`;
-    alert("Lỗi rồi mày ơi: " + err.message);
   }
 }
 
-// BẮT SỰ KIỆN ENTER CHUẨN CHỈ TRÊN TEXTAREA (SHIFT + ENTER LÀ XUỐNG DÒNG)
-if (userInput) {
-    userInput.addEventListener("keydown", (e) => {
-      if (e.key === "Enter" && !e.shiftKey) {
-        e.preventDefault(); // Khóa cứng hành vi nhảy xuống dòng mặc định
-        generateText(); // Phù phép ra kết quả luôn
-      }
-    });
-}
+apiKeyInput.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    userInput.focus();
+  }
+});
+
+userInput.addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && !e.shiftKey) {
+    e.preventDefault();
+    generateText();
+  }
+});
+
+document.addEventListener('DOMContentLoaded', loadApiKey);
