@@ -7,188 +7,219 @@
  *
  * Copyright (c) 2025 germineye
  */
-
 @import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600&family=UnifrakturMaguntia&display=swap');
 
-/* Bảng màu được đơn giản hóa để có độ tương phản nhẹ nhàng hơn */
 :root {
-    --bg: #49494B; /* Nền tối hơn một chút */
-    --surface: #72629B; /* Nền cho các ô nhập liệu, nổi bật hơn một chút */
-    --fg: #FAFAFA;
-    --accent: #FFA8BC; /* Giữ lại màu nhấn để làm nổi bật khi cần */
-    --muted: #E2E2E2;
+  --bg: #49494B;
+  --surface: #72629B;
+  --fg: #FAFAFA;
+  --accent: #FFA8BC;
+  --muted: #E2E2E2;
 }
 
 * {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-    font-family: 'Be Vietnam Pro', sans-serif;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: 'Be Vietnam Pro', sans-serif;
 }
 
 body {
-    background: var(--bg);
-    color: var(--fg);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 3rem 1rem;
-    min-height: 100vh;
+  background: var(--bg);
+  color: var(--fg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 3rem 1rem;
+  min-height: 100vh;
 }
 
 .container {
-    width: 100%;
-    max-width: 800px; /* Thu hẹp một chút để dễ đọc hơn */
-    transition: opacity 0.3s ease;
-    flex: 1;
+  width: 100%;
+  max-width: 800px;
+  transition: opacity 0.3s ease;
+  flex: 1;
 }
 
 h1 {
-    text-align: center;
-    font-weight: 500;
-    font-size: 1.6rem; /* Giảm kích thước một chút cho tinh tế hơn */
-    color: var(--fg); /* Chuyển sang màu chữ chính thay vì màu nhấn */
-    margin-bottom: 2.5rem;
+  text-align: center;
+  font-weight: 500;
+  font-size: 1.6rem;
+  color: var(--fg);
+  margin-bottom: 2.5rem;
 }
 
-/* Áp dụng cho cả input, select và textarea để đồng nhất */
-#api-key, #model-select, #user-input {
-    width: 100%;
-    background: var(--surface);
-    color: var(--fg);
-    border: none; /* Loại bỏ hoàn toàn đường viền */
-    border-radius: 8px;
-    padding: 0.9rem 1rem;
-    font-size: 1rem;
-    outline: none; /* Tắt đường viền mặc định của trình duyệt */
-    transition: box-shadow 0.2s ease; /* Hiệu ứng mượt mà khi focus */
+#api-key,
+#model-select,
+#tone-select,
+#length-select,
+#user-input,
+#generate-btn {
+  width: 100%;
+  background: var(--surface);
+  color: var(--fg);
+  border: none;
+  border-radius: 8px;
+  padding: 0.9rem 1rem;
+  font-size: 1rem;
+  outline: none;
+  transition: box-shadow 0.2s ease, filter 0.2s ease, transform 0.1s ease;
 }
 
-    /* Sử dụng box-shadow thay vì border khi focus để trông hiện đại hơn */
-    #api-key:focus, #model-select:focus, #user-input:focus {
-        box-shadow: 0 0 0 2px var(--accent);
-    }
+#api-key:focus,
+#model-select:focus,
+#tone-select:focus,
+#length-select:focus,
+#user-input:focus,
+#generate-btn:focus {
+  box-shadow: 0 0 0 2px var(--accent);
+}
 
-/* Tạo khoảng cách giữa các trường cấu hình */
+#model-select,
+#tone-select,
+#length-select,
+#generate-btn {
+  cursor: pointer;
+}
+
 .config {
-    display: flex;
-    gap: 1rem;
-    margin-bottom: 1rem;
-    flex-wrap: wrap; /* Cho phép xuống dòng trên màn hình nhỏ */
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
 }
 
-    .config > * {
-        flex: 1; /* Các trường sẽ tự động chia đều không gian */
-        min-width: 200px; /* Đảm bảo không bị quá hẹp */
-    }
+.config > * {
+  flex: 1;
+  min-width: 200px;
+}
 
 #user-input {
-    min-height: 180px;
-    resize: vertical;
+  min-height: 180px;
+  resize: vertical;
 }
 
-/* Canh lề và định dạng cho chữ placeholder */
+#generate-btn {
+  margin-top: 1rem;
+  background: var(--accent);
+  color: #000;
+  font-weight: 600;
+}
+
+#generate-btn:hover {
+  filter: brightness(1.08);
+}
+
+#generate-btn:active {
+  transform: scale(0.99);
+}
+
+#generate-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+  filter: none;
+}
+
+.hidden {
+  display: none !important;
+}
+
 ::placeholder {
-    color: var(--muted);
-    opacity: 1;
+  color: var(--muted);
+  opacity: 1;
 }
 
-/* Định dạng cho vùng kết quả */
 .result {
-    margin-top: 1.5rem;
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
+  margin-top: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
 }
 
 .result-block {
-    background: var(--surface); /* Sử dụng cùng màu nền với ô nhập liệu */
-    border-radius: 8px;
-    padding: 1.2rem 1.5rem;
-    line-height: 1.7;
-    animation: fadeIn 0.5s ease forwards;
-    opacity: 0;
+  background: var(--surface);
+  border-radius: 8px;
+  padding: 1.2rem 1.5rem;
+  line-height: 1.7;
+  animation: fadeIn 0.5s ease forwards;
+  opacity: 0;
+  cursor: pointer;
+  transition: transform 0.1s, filter 0.2s;
+  white-space: pre-wrap;
 }
 
-    /* Hiệu ứng xuất hiện mượt mà cho từng khối kết quả */
-    .result-block:nth-child(2) {
-        animation-delay: 0.2s;
-    }
-
-    .result-block:nth-child(3) {
-        animation-delay: 0.4s;
-    }
-
-
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(10px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+.result-block:nth-child(2) {
+  animation-delay: 0.2s;
 }
 
-/* Định dạng cho footer */
-footer {
-    text-align: center;
-    margin-top: 3rem;
-    color: var(--muted);
-    font-size: 0.65rem;
-}
-
-/* Định dạng cho trạng thái xử lý */
-.status {
-    text-align: center;
-    margin-top: 1rem;
-    color: var(--accent);
-    opacity: 0;
-    transition: opacity 0.3s ease;
-}
-
-.formal-font {
-    font-family: 'UnifrakturMaguntia', cursive;
-    font-size: 1.4rem; /* Cỡ chữ to hơn tí cho dễ đọc vì font này nhiều nét */
-    letter-spacing: 0.5px;
-}
-
-/* Thêm con trỏ chuột và hiệu ứng bấm cho kết quả */
-.result-block {
-    cursor: pointer;
-    transition: transform 0.1s, filter 0.2s;
+.result-block:nth-child(3) {
+  animation-delay: 0.4s;
 }
 
 .result-block:hover {
-    filter: brightness(1.2);
+  filter: brightness(1.2);
 }
 
 .result-block:active {
-    transform: scale(0.98);
+  transform: scale(0.98);
 }
 
-/* Khung thông báo đã copy */
-.toast-msg {
-    position: fixed;
-    bottom: 30px;
-    left: 50%;
-    transform: translateX(-50%);
-    background-color: var(--accent);
-    color: #000;
-    padding: 10px 20px;
-    border-radius: 30px;
-    font-weight: 600;
+.error-block {
+  border: 1px solid var(--accent);
+}
+
+@keyframes fadeIn {
+  from {
     opacity: 0;
-    visibility: hidden;
-    transition: all 0.3s ease;
-    z-index: 1000;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+footer {
+  text-align: center;
+  margin-top: 3rem;
+  color: var(--muted);
+  font-size: 0.65rem;
+}
+
+.status {
+  text-align: center;
+  margin-top: 1rem;
+  color: var(--accent);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.formal-font {
+  font-family: 'UnifrakturMaguntia', cursive;
+  font-size: 1.4rem;
+  letter-spacing: 0.5px;
+}
+
+.toast-msg {
+  position: fixed;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: var(--accent);
+  color: #000;
+  padding: 10px 20px;
+  border-radius: 30px;
+  font-weight: 600;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+  z-index: 1000;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
 }
 
 .toast-msg.show {
-    opacity: 1;
-    visibility: visible;
-    bottom: 50px;
+  opacity: 1;
+  visibility: visible;
+  bottom: 50px;
 }
