@@ -1,22 +1,4 @@
-# ngu-phap Chrome Built-in AI patch
-
-Copy these files over your repo root:
-
-- index.html
-- script.js
-- style.css
-
-Then run locally:
-
-```bash
-python -m http.server 5173
-```
-
-Open:
-
-```txt
-http://localhost:5173
-```
+# ngu-phap Chrome Built-in AI
 
 Chrome flags needed for local Rewriter API testing:
 
