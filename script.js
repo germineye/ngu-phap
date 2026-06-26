@@ -8,28 +8,13 @@
  * Copyright (c) 2025 germineye
  */
 
-// --- TÍNH NĂNG BẢO MẬT: CHẶN CHUỘT PHẢI & PHÍM TẮT SOI CODE ---
-// Lưu ý: chặn này chỉ làm người dùng thường khó soi code hơn, không phải bảo mật thật.
-document.addEventListener("contextmenu", e => e.preventDefault());
-document.addEventListener("keydown", e => {
-  const key = e.key.toLowerCase();
-
-  if (
-    e.key === "F12" ||
-    (e.ctrlKey && e.shiftKey && ["i", "j", "c"].includes(key)) ||
-    (e.ctrlKey && key === "u")
-  ) {
-    e.preventDefault();
-  }
-});
-
 const BUILTIN_MODEL = "chrome-built-in";
 const openAIEndpoint = "https://api.openai.com/v1/chat/completions";
 const geminiEndpoint = "https://generativelanguage.googleapis.com/v1beta/models";
 
 let apiKey = "";
 let modelType = "gemini";
-let modelName = "gemini-3-flash-preview";
+let modelName = "gemini-3.5-flash";
 
 const editorPrompt = `
 You are an expert multilingual assistant.
@@ -68,7 +53,6 @@ const statusText = document.getElementById("status");
 
 const STORAGE_KEY = "ngu_phap_api_key";
 
-// --- KHUNG THÔNG BÁO ĐÃ COPY ---
 const toast = document.createElement("div");
 toast.className = "toast-msg";
 toast.innerText = "✨ đã copy!";
@@ -83,11 +67,9 @@ function showToast() {
     toast.classList.remove("show");
   }, 2000);
 }
-// --------------------------------
 
 function loadApiKey() {
   const savedKey = localStorage.getItem(STORAGE_KEY);
-
   if (savedKey) {
     apiKeyInput.value = savedKey;
   }
@@ -108,7 +90,6 @@ function setStatus(message = "") {
 
 function updateModeUI() {
   const builtIn = isBuiltInMode();
-
   apiKeyInput.classList.toggle("hidden", builtIn);
   toneSelect.classList.toggle("hidden", !builtIn);
   lengthSelect.classList.toggle("hidden", !builtIn);
@@ -128,22 +109,31 @@ function updateModeUI() {
 
 function createResultBlock(text, index = 0) {
   const div = document.createElement("div");
-
   div.className = "result-block";
   if (index === 2) div.classList.add("formal-font");
-
   div.style.animationDelay = `${index * 0.2}s`;
-  div.innerText = text.trim();
 
-  div.addEventListener("click", async () => {
+  const textSpan = document.createElement("span");
+  textSpan.innerText = text.trim();
+  div.appendChild(textSpan);
+
+  const copyBtn = document.createElement("button");
+  copyBtn.className = "copy-btn";
+  copyBtn.type = "button";
+  copyBtn.innerHTML = "📋";
+  copyBtn.setAttribute("aria-label", "Copy text");
+
+  copyBtn.addEventListener("click", async (e) => {
+    e.stopPropagation();
     try {
-      await navigator.clipboard.writeText(div.innerText);
+      await navigator.clipboard.writeText(text.trim());
       showToast();
     } catch (err) {
-      console.error("Lỗi copy:", err);
+      console.error(err);
     }
   });
 
+  div.appendChild(copyBtn);
   return div;
 }
 
@@ -256,7 +246,7 @@ async function generateWithChromeBuiltInAI(text) {
   try {
     return await generateWithRewriter(text);
   } catch (rewriterError) {
-    console.warn("Rewriter failed, trying Prompt API fallback:", rewriterError);
+    console.warn(rewriterError);
     setStatus("Rewriter fail, đang thử Prompt API fallback...");
     return await generateWithPromptApiFallback(text);
   }
@@ -264,7 +254,6 @@ async function generateWithChromeBuiltInAI(text) {
 
 async function generateWithCloudApi(text) {
   apiKey = apiKeyInput.value.trim();
-
   if (!apiKey) {
     alert("API key đâu?");
     apiKeyInput.focus();
@@ -327,7 +316,6 @@ async function generateWithCloudApi(text) {
 
 async function generateText() {
   const text = userInput.value.trim();
-
   if (!text) return;
 
   resultContainer.innerHTML = "";
