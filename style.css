@@ -7,6 +7,7 @@
  *
  * Copyright (c) 2025 germineye
  */
+
 @import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600&family=UnifrakturMaguntia&display=swap');
 
 :root {
@@ -137,13 +138,13 @@ h1 {
 }
 
 .result-block {
+  position: relative;
   background: var(--surface);
   border-radius: 8px;
-  padding: 1.2rem 1.5rem;
+  padding: 1.2rem 3.5rem 1.2rem 1.5rem;
   line-height: 1.7;
   animation: fadeIn 0.5s ease forwards;
   opacity: 0;
-  cursor: pointer;
   transition: transform 0.1s, filter 0.2s;
   white-space: pre-wrap;
 }
@@ -157,11 +158,28 @@ h1 {
 }
 
 .result-block:hover {
-  filter: brightness(1.2);
+  filter: brightness(1.05);
 }
 
-.result-block:active {
-  transform: scale(0.98);
+.copy-btn {
+  position: absolute;
+  top: 1.1rem;
+  right: 1.2rem;
+  background: transparent;
+  border: none;
+  font-size: 1.1rem;
+  cursor: pointer;
+  opacity: 0.6;
+  transition: opacity 0.2s, transform 0.1s;
+}
+
+.copy-btn:hover {
+  opacity: 1;
+  transform: scale(1.15);
+}
+
+.copy-btn:active {
+  transform: scale(0.9);
 }
 
 .error-block {
@@ -222,4 +240,40 @@ footer {
   opacity: 1;
   visibility: visible;
   bottom: 50px;
+}
+
+.help-section {
+  margin-top: 2.5rem;
+  background: rgba(255, 255, 255, 0.03);
+  padding: 1.5rem;
+  border-radius: 8px;
+  border-left: 4px solid var(--accent);
+}
+
+.help-section h3 {
+  font-size: 1.1rem;
+  margin-bottom: 0.6rem;
+  color: var(--accent);
+  font-weight: 500;
+}
+
+.help-section p {
+  font-size: 0.9rem;
+  margin-bottom: 0.8rem;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.help-section ul {
+  list-style-type: none;
+}
+
+.help-section li {
+  font-size: 0.85rem;
+  background: rgba(0, 0, 0, 0.15);
+  padding: 0.5rem 0.7rem;
+  margin-bottom: 0.4rem;
+  border-radius: 4px;
+  font-family: monospace;
+  word-break: break-all;
 }
