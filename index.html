@@ -15,12 +15,12 @@
       <input id="api-key" type="password" placeholder="nhập API key của bạn vào đây và bấm Enter" />
 
       <select id="model-select" aria-label="Chọn model">
-        <option value="chrome-built-in" selected>Chrome Built-in AI (local/free)</option>
-        <option value="gpt-5.4">OpenAI GPT-5.4</option>
-        <option value="gpt-5.4-mini">OpenAI GPT-5.4 Mini</option>
+        <option value="chrome-built-in" selected>Chrome Built-in AI</option>
+        <option value="gpt-5.5">OpenAI GPT-5.5</option>
+        <option value="gpt-5.5-instant">OpenAI GPT-5.5 Instant</option>
+        <option value="gemini-3.5-flash">Gemini 3.5 Flash</option>
         <option value="gemini-3.1-pro-preview">Gemini 3.1 Pro Preview</option>
-        <option value="gemini-3-flash-preview">Gemini 3 Flash Preview</option>
-        <option value="gemini-3.1-flash-lite-preview">Gemini 3.1 Flash Lite Preview</option>
+        <option value="gemini-3.1-flash-lite">Gemini 3.1 Flash Lite</option>
       </select>
 
       <select id="tone-select" aria-label="Chọn giọng viết">
@@ -42,6 +42,16 @@
 
     <div id="status" class="status"></div>
     <div id="result" class="result"></div>
+
+    <div class="help-section">
+      <p>Local Mode chỉ hoạt động trên Google Chrome và phụ thuộc vào việc bật các cài đặt AI thử nghiệm. Truy cập và kích hoạt các flag sau rồi khởi động lại trình duyệt:</p>
+      <ul>
+        <li>chrome://flags/#optimization-guide-on-device-model</li>
+        <li>chrome://flags/#prompt-api-for-gemini-nano-multimodal-input</li>
+        <li>chrome://flags/#writer-api-for-gemini-nano</li>
+        <li>chrome://flags/#rewriter-api-for-gemini-nano</li>
+      </ul>
+    </div>
   </main>
 
   <footer>
