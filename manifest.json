@@ -1,0 +1,16 @@
+{
+  "name": "ngu-phap",
+  "short_name": "ngu-phap",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#49494B",
+  "theme_color": "#72629B",
+  "icons": [
+    {
+      "src": "favicon-96x96.png",
+      "sizes": "96x96",
+      "type": "image/png"
+    }
+  ]
+}
