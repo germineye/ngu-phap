@@ -81,35 +81,32 @@ textarea {
   gap: 3px;
 }
 
-.window-controls span {
+.window-control {
   width: 20px;
   height: 20px;
+  padding: 0;
+  color: var(--fg);
   background: var(--surface);
   border: 2px solid;
   border-color: var(--highlight) var(--shadow) var(--shadow) var(--highlight);
-}
-
-.window-controls span:nth-child(1)::before,
-.window-controls span:nth-child(2)::before,
-.window-controls span:nth-child(3)::before {
-  display: block;
-  color: var(--fg);
-  text-align: center;
-  line-height: 14px;
+  border-radius: 0;
+  cursor: pointer;
   font-size: 12px;
   font-weight: 700;
+  line-height: 14px;
+  text-align: center;
 }
 
-.window-controls span:nth-child(1)::before {
-  content: "_";
+.window-control:active,
+.window-control.pressed {
+  padding-top: 1px;
+  padding-left: 1px;
+  border-color: var(--shadow) var(--highlight) var(--highlight) var(--shadow);
 }
 
-.window-controls span:nth-child(2)::before {
-  content: "□";
-}
-
-.window-controls span:nth-child(3)::before {
-  content: "×";
+.window-control:focus {
+  outline: 1px dotted var(--fg);
+  outline-offset: -4px;
 }
 
 .window-body {
