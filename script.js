@@ -74,6 +74,7 @@ const chromeHelp = document.getElementById("chrome-help");
 const geminiHelp = document.getElementById("gemini-help");
 const toast = document.getElementById("toast");
 const geminiOnlyElements = document.querySelectorAll(".gemini-only");
+const windowControls = document.querySelectorAll(".window-control");
 
 let toastTimeout;
 
@@ -133,7 +134,7 @@ function updateModeUI() {
     : "nhập câu cần sửa bằng Chrome AI, app sẽ giữ nguyên ngôn ngữ gốc";
 
   resultContainer.innerHTML = "";
-  setStatus(geminiMode ? "Gemini: cần mạng và API key." : "Chrome AI: chạy trên máy nếu trình duyệt hỗ trợ.");
+  setStatus("");
 }
 
 function createResultBlock(text, isError = false) {
@@ -404,6 +405,21 @@ function registerServiceWorker() {
   });
 }
 
+function handleWindowControl(button) {
+  const action = button.dataset.windowAction;
+
+  button.classList.add("pressed");
+  window.setTimeout(() => {
+    button.classList.remove("pressed");
+  }, 120);
+
+  if (action === "close") {
+    window.setTimeout(() => {
+      window.close();
+    }, 80);
+  }
+}
+
 apiKeyInput.addEventListener("keydown", event => {
   if (event.key === "Enter") {
     event.preventDefault();
@@ -422,6 +438,10 @@ generateBtn.addEventListener("click", generateText);
 engineSelect.addEventListener("change", updateModeUI);
 window.addEventListener("online", updateNetworkStatus);
 window.addEventListener("offline", updateNetworkStatus);
+
+windowControls.forEach(button => {
+  button.addEventListener("click", () => handleWindowControl(button));
+});
 
 document.addEventListener("DOMContentLoaded", () => {
   loadApiKey();
