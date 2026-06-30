@@ -3,64 +3,118 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#72629B" />
   <link rel="icon" type="image/png" href="favicon-96x96.png" />
-  <title>sai ngữ pháp?</title>
+  <link rel="manifest" href="manifest.json" />
+  <title>ngu-phap</title>
   <link rel="stylesheet" href="style.css" />
+  <script src="script.js" defer></script>
 </head>
 <body>
-  <main class="container">
-    <h1>công cụ sửa ngữ pháp và dịch thông minh (nhất thế giới)</h1>
-
-    <div class="config">
-      <input id="api-key" type="password" placeholder="nhập API key của bạn vào đây và bấm Enter" />
-
-      <select id="model-select" aria-label="Chọn model">
-        <option value="chrome-built-in" selected>Chrome Built-in AI</option>
-        <option value="gpt-5.5">OpenAI GPT-5.5</option>
-        <option value="gpt-5.5-instant">OpenAI GPT-5.5 Instant</option>
-        <option value="gemini-3.5-flash">Gemini 3.5 Flash</option>
-        <option value="gemini-3.1-pro-preview">Gemini 3.1 Pro Preview</option>
-        <option value="gemini-3.1-flash-lite">Gemini 3.1 Flash Lite</option>
-      </select>
-
-      <select id="tone-select" aria-label="Chọn giọng viết">
-        <option value="as-is" selected>Giữ giọng</option>
-        <option value="more-casual">Tự nhiên hơn</option>
-        <option value="more-formal">Trang trọng hơn</option>
-      </select>
-
-      <select id="length-select" aria-label="Chọn độ dài">
-        <option value="as-is" selected>Giữ độ dài</option>
-        <option value="shorter">Ngắn hơn</option>
-        <option value="longer">Dài hơn</option>
-      </select>
+  <main class="window" aria-labelledby="app-title">
+    <div class="title-bar">
+      <div class="title-bar-text">ngu-phap.exe</div>
+      <div class="window-controls" aria-hidden="true">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
     </div>
 
-    <textarea id="user-input" placeholder="muốn nói gì nói đi (bằng tiếng Anh/Pháp, nếu ngôn ngữ khác thì sẽ dịch sang Anh)"></textarea>
+    <section class="window-body">
+      <h1 id="app-title">sửa ngữ pháp / paraphrase đa ngôn ngữ</h1>
 
-    <button id="generate-btn" type="button">xử lý</button>
+      <div class="config-grid">
+        <label class="field">
+          <span>Chế độ</span>
+          <select id="engine-select" aria-label="Chọn chế độ xử lý">
+            <option value="chrome-built-in" selected>Chrome AI</option>
+            <option value="gemini">Gemini</option>
+          </select>
+        </label>
 
-    <div id="status" class="status"></div>
-    <div id="result" class="result"></div>
+        <label class="field gemini-only hidden">
+          <span>Gemini model</span>
+          <select id="gemini-model-select" aria-label="Chọn model Gemini">
+            <option value="gemini-3.5-flash" selected>Gemini 3.5 Flash</option>
+            <option value="gemini-3.1-flash-lite">Gemini 3.1 Flash-Lite</option>
+            <option value="gemini-3.1-pro-preview">Gemini 3.1 Pro Preview</option>
+          </select>
+        </label>
 
-    <div class="help-section">
-      <p>Local Mode chỉ hoạt động trên Google Chrome và phụ thuộc vào việc bật các cài đặt AI thử nghiệm. Truy cập và kích hoạt các flag sau rồi khởi động lại trình duyệt:</p>
-      <ul>
-        <li>chrome://flags/#optimization-guide-on-device-model</li>
-        <li>chrome://flags/#prompt-api-for-gemini-nano-multimodal-input</li>
-        <li>chrome://flags/#writer-api-for-gemini-nano</li>
-        <li>chrome://flags/#rewriter-api-for-gemini-nano</li>
-      </ul>
+        <label class="field gemini-only hidden">
+          <span>API key</span>
+          <input id="api-key" type="password" autocomplete="off" placeholder="dán Gemini API key rồi bấm Enter" />
+        </label>
+
+        <label class="field">
+          <span>Ngôn ngữ</span>
+          <select id="language-select" aria-label="Chọn ngôn ngữ">
+            <option value="auto" selected>Tự nhận diện</option>
+            <option value="vi">Tiếng Việt</option>
+            <option value="en">English</option>
+            <option value="ja">日本語</option>
+            <option value="fr">Français</option>
+            <option value="zh">官话</option>
+          </select>
+        </label>
+
+        <label class="field">
+          <span>Phong cách</span>
+          <select id="tone-select" aria-label="Chọn phong cách">
+            <option value="as-is" selected>Không đổi</option>
+            <option value="more-casual">Tự nhiên hơn</option>
+            <option value="more-formal">Trang trọng hơn</option>
+          </select>
+        </label>
+
+        <label class="field">
+          <span>Độ dài</span>
+          <select id="length-select" aria-label="Chọn độ dài">
+            <option value="as-is" selected>Không đổi</option>
+            <option value="shorter">Ngắn hơn</option>
+            <option value="longer">Dài hơn</option>
+          </select>
+        </label>
+      </div>
+
+      <label class="field editor-field">
+        <span>Nội dung</span>
+        <textarea id="user-input" placeholder="nhập câu cần sửa, app sẽ giữ nguyên ngôn ngữ gốc"></textarea>
+      </label>
+
+      <button id="generate-btn" type="button">xử lý</button>
+
+      <div id="status" class="status" role="status" aria-live="polite"></div>
+      <div id="result" class="result" aria-live="polite"></div>
+
+      <section id="chrome-help" class="help-section" aria-labelledby="chrome-help-title">
+        <h2 id="chrome-help-title">Chrome AI</h2>
+        <p>Chế độ này chạy trên máy nếu Chrome hỗ trợ. Nếu chưa dùng được, bật các flag sau rồi khởi động lại Chrome:</p>
+        <ul>
+          <li>chrome://flags/#optimization-guide-on-device-model</li>
+          <li>chrome://flags/#prompt-api-for-gemini-nano-multimodal-input</li>
+          <li>chrome://flags/#writer-api-for-gemini-nano</li>
+          <li>chrome://flags/#rewriter-api-for-gemini-nano</li>
+        </ul>
+      </section>
+
+      <section id="gemini-help" class="help-section hidden" aria-labelledby="gemini-help-title">
+        <h2 id="gemini-help-title">Gemini</h2>
+        <p>Chế độ này dùng mạng và cần API key từ Google AI Studio. Key được lưu trong trình duyệt của bạn.</p>
+      </section>
+    </section>
+
+    <div class="status-bar">
+      <span id="mode-status">Chrome AI</span>
+      <span id="network-status">đang kiểm tra mạng...</span>
     </div>
   </main>
 
-  <footer>
-    <p>
-      built with the dedicated support of Germini and ChatLGPT <br />
-      26/6/2026 germineye
-    </p>
-  </footer>
+  <div id="toast" class="toast-msg" role="status" aria-live="polite">đã copy!</div>
 
-  <script src="script.js"></script>
+  <footer>
+    <p>built with the dedicated support of Germini and ChatLGPT<br />26/6/2026 germineye</p>
+  </footer>
 </body>
 </html>
