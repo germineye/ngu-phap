@@ -3,10 +3,6 @@
 Web sửa ngữ pháp / paraphrase đa ngôn ngữ.
 
 - Chrome AI hoặc Gemini
-- Không dịch
-- Không OpenAI
-- Một lần bấm = một kết quả
-- Giữ nguyên ngôn ngữ gốc
 
 ## Ngôn ngữ
 
@@ -33,4 +29,4 @@ Cần mạng, API key Google AI Studio, và chọn model Gemini trong web.
 
 ## Offline
 
-Web có cache offline cho file tĩnh. Gemini vẫn cần mạng. Chrome AI có thể chạy offline sau khi Chrome tải model xong.
+Chrome AI có thể chạy offline sau khi Chrome tải model xong, tuy nhiên mode Gemini vẫn cần mạng.
