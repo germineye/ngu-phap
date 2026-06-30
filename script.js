@@ -8,183 +8,252 @@
  * Copyright (c) 2025 germineye
  */
 
-const BUILTIN_MODEL = "chrome-built-in";
-const openAIEndpoint = "https://api.openai.com/v1/chat/completions";
-const geminiEndpoint = "https://generativelanguage.googleapis.com/v1beta/models";
+const CHROME_ENGINE = "chrome-built-in";
+const GEMINI_ENGINE = "gemini";
+const GEMINI_ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models";
+const API_KEY_STORAGE_KEY = "ngu_phap_gemini_api_key";
 
-let apiKey = "";
-let modelType = "gemini";
-let modelName = "gemini-3.5-flash";
+const LANGUAGE_OPTIONS = {
+  auto: {
+    code: null,
+    promptName: "the input language",
+    uiName: "Tự nhận diện"
+  },
+  vi: {
+    code: "vi",
+    promptName: "Vietnamese",
+    uiName: "Tiếng Việt"
+  },
+  en: {
+    code: "en",
+    promptName: "English",
+    uiName: "English"
+  },
+  ja: {
+    code: "ja",
+    promptName: "Japanese",
+    uiName: "日本語"
+  },
+  fr: {
+    code: "fr",
+    promptName: "French",
+    uiName: "Français"
+  },
+  zh: {
+    code: "zh",
+    promptName: "Mandarin Chinese",
+    uiName: "官话"
+  }
+};
 
-const editorPrompt = `
-You are an expert multilingual assistant.
+const TONE_PROMPTS = {
+  "as-is": "Keep the original style and tone unless a change is needed to fix awkward wording.",
+  "more-casual": "Make the text sound more natural, fluent, and conversational.",
+  "more-formal": "Make the text more formal and polished without making it stiff."
+};
 
-DETERMINE THE INPUT LANGUAGE:
+const LENGTH_PROMPTS = {
+  "as-is": "Keep roughly the same length.",
+  shorter: "Make the text shorter while preserving the core meaning.",
+  longer: "Make the text longer only if it improves clarity and flow."
+};
 
-1. If the input is in ENGLISH or FRENCH:
-  - Act as an EDITOR.
-  - Provide exactly 3 versions:
-    a) Grammar Correction Only: Fix only grammatical or spelling mistakes while preserving the original tone, mood, and word choice as much as possible.
-    b) Natural Paraphrase: Correct grammar and rephrase slightly so the sentence sounds fluent and natural to a native speaker, while keeping the same nuance and intent as the original.
-    c) Formalized Version (Conditional): If the text contains slang, abbreviations, or overly casual phrasing, rewrite it into a grammatically correct and moderately formal version (not overly stiff). If the input is already formal enough, skip this version.
-  - All versions must be in the SAME language as the input.
-
-2. If the input is in ANY OTHER LANGUAGE (e.g., Vietnamese, Japanese, etc.):
-  - Act as a TRANSLATOR to English.
-  - Provide exactly 2 versions:
-    a) Natural Translation: Sounds fluent and natural to a native speaker.
-    b) Professional Translation: Formal and structured English.
-
-RULES:
-- Output ONLY the rewritten/translated sentences.
-- Separate each version strictly with the delimiter:
----
-- DO NOT add any explanation, titles, or introductions.
-`;
-
+const engineSelect = document.getElementById("engine-select");
+const geminiModelSelect = document.getElementById("gemini-model-select");
 const apiKeyInput = document.getElementById("api-key");
-const modelSelect = document.getElementById("model-select");
+const languageSelect = document.getElementById("language-select");
 const toneSelect = document.getElementById("tone-select");
 const lengthSelect = document.getElementById("length-select");
 const userInput = document.getElementById("user-input");
 const generateBtn = document.getElementById("generate-btn");
 const resultContainer = document.getElementById("result");
 const statusText = document.getElementById("status");
-
-const STORAGE_KEY = "ngu_phap_api_key";
-
-const toast = document.createElement("div");
-toast.className = "toast-msg";
-toast.innerText = "✨ đã copy!";
-document.body.appendChild(toast);
+const modeStatus = document.getElementById("mode-status");
+const networkStatus = document.getElementById("network-status");
+const chromeHelp = document.getElementById("chrome-help");
+const geminiHelp = document.getElementById("gemini-help");
+const toast = document.getElementById("toast");
+const geminiOnlyElements = document.querySelectorAll(".gemini-only");
 
 let toastTimeout;
+
+function isChromeMode() {
+  return engineSelect.value === CHROME_ENGINE;
+}
+
+function isGeminiMode() {
+  return engineSelect.value === GEMINI_ENGINE;
+}
+
+function getSelectedLanguage() {
+  return LANGUAGE_OPTIONS[languageSelect.value] || LANGUAGE_OPTIONS.auto;
+}
+
+function setStatus(message = "") {
+  statusText.textContent = message;
+  statusText.classList.toggle("visible", Boolean(message));
+}
 
 function showToast() {
   toast.classList.add("show");
   clearTimeout(toastTimeout);
   toastTimeout = setTimeout(() => {
     toast.classList.remove("show");
-  }, 2000);
+  }, 1600);
 }
 
 function loadApiKey() {
-  const savedKey = localStorage.getItem(STORAGE_KEY);
+  const savedKey = localStorage.getItem(API_KEY_STORAGE_KEY);
   if (savedKey) {
     apiKeyInput.value = savedKey;
   }
 }
 
 function saveApiKey(key) {
-  localStorage.setItem(STORAGE_KEY, key);
+  localStorage.setItem(API_KEY_STORAGE_KEY, key);
 }
 
-function isBuiltInMode() {
-  return modelSelect.value === BUILTIN_MODEL;
-}
-
-function setStatus(message = "") {
-  statusText.textContent = message;
-  statusText.style.opacity = message ? "1" : "0";
+function updateNetworkStatus() {
+  networkStatus.textContent = navigator.onLine ? "online" : "offline";
 }
 
 function updateModeUI() {
-  const builtIn = isBuiltInMode();
-  apiKeyInput.classList.toggle("hidden", builtIn);
-  toneSelect.classList.toggle("hidden", !builtIn);
-  lengthSelect.classList.toggle("hidden", !builtIn);
+  const geminiMode = isGeminiMode();
 
-  userInput.placeholder = builtIn
-    ? "nhập câu muốn paraphrase/chỉnh lại bằng Chrome Built-in AI"
-    : "muốn nói gì nói đi (bằng tiếng Anh/Pháp, nếu ngôn ngữ khác thì sẽ dịch sang Anh)";
+  geminiOnlyElements.forEach(element => {
+    element.classList.toggle("hidden", !geminiMode);
+  });
+
+  chromeHelp.classList.toggle("hidden", geminiMode);
+  geminiHelp.classList.toggle("hidden", !geminiMode);
+
+  modeStatus.textContent = geminiMode ? "Gemini" : "Chrome AI";
+  userInput.placeholder = geminiMode
+    ? "nhập câu cần sửa bằng Gemini, app sẽ giữ nguyên ngôn ngữ gốc"
+    : "nhập câu cần sửa bằng Chrome AI, app sẽ giữ nguyên ngôn ngữ gốc";
 
   resultContainer.innerHTML = "";
-
-  if (builtIn) {
-    setStatus("local mode: không cần API key, chạy bằng Chrome Built-in AI");
-  } else {
-    setStatus("cloud mode: cần API key");
-  }
+  setStatus(geminiMode ? "Gemini: cần mạng và API key." : "Chrome AI: chạy trên máy nếu trình duyệt hỗ trợ.");
 }
 
-function createResultBlock(text, index = 0) {
+function createResultBlock(text, isError = false) {
   const div = document.createElement("div");
   div.className = "result-block";
-  if (index === 2) div.classList.add("formal-font");
-  div.style.animationDelay = `${index * 0.2}s`;
+  div.classList.toggle("error-block", isError);
 
   const textSpan = document.createElement("span");
   textSpan.innerText = text.trim();
   div.appendChild(textSpan);
 
-  const copyBtn = document.createElement("button");
-  copyBtn.className = "copy-btn";
-  copyBtn.type = "button";
-  copyBtn.innerHTML = "📋";
-  copyBtn.setAttribute("aria-label", "Copy text");
+  if (!isError) {
+    const copyBtn = document.createElement("button");
+    copyBtn.className = "copy-btn";
+    copyBtn.type = "button";
+    copyBtn.innerText = "Copy";
+    copyBtn.setAttribute("aria-label", "Copy text");
 
-  copyBtn.addEventListener("click", async (e) => {
-    e.stopPropagation();
-    try {
-      await navigator.clipboard.writeText(text.trim());
-      showToast();
-    } catch (err) {
-      console.error(err);
-    }
-  });
+    copyBtn.addEventListener("click", async event => {
+      event.stopPropagation();
+      try {
+        await navigator.clipboard.writeText(text.trim());
+        showToast();
+      } catch (err) {
+        console.error(err);
+      }
+    });
 
-  div.appendChild(copyBtn);
+    div.appendChild(copyBtn);
+  }
+
   return div;
 }
 
 function renderError(message) {
   resultContainer.innerHTML = "";
-  const div = createResultBlock(`⚠️ Lỗi: ${message}`);
-  div.classList.add("error-block");
-  resultContainer.appendChild(div);
+  resultContainer.appendChild(createResultBlock(`Lỗi: ${message}`, true));
 }
 
-function renderResults(content) {
+function renderResult(content) {
   setStatus("");
   resultContainer.innerHTML = "";
 
-  const parts = content
-    .split(/\n+---\n+/)
-    .map(part => part.trim())
-    .filter(Boolean);
+  const result = content.trim();
 
-  if (!parts.length) {
-    const div = createResultBlock("⚠️ Model trả về kết quả rỗng hoặc không đúng định dạng.");
-    div.classList.add("error-block");
-    resultContainer.appendChild(div);
+  if (!result) {
+    renderError("AI trả về kết quả rỗng.");
     return;
   }
 
-  parts.forEach((part, index) => {
-    resultContainer.appendChild(createResultBlock(part, index));
-  });
+  resultContainer.appendChild(createResultBlock(result));
+}
+
+function buildInstruction() {
+  const language = getSelectedLanguage();
+  const languageRule = language.code
+    ? `The text is in ${language.promptName}. The output must stay in ${language.promptName}.`
+    : "Detect the input language and keep the output in that same language.";
+
+  return [
+    "Rewrite the user's text in the same language.",
+    languageRule,
+    "Fix grammar, spelling, punctuation, word choice, and awkward phrasing.",
+    "Preserve the original meaning.",
+    "Do not translate.",
+    TONE_PROMPTS[toneSelect.value],
+    LENGTH_PROMPTS[lengthSelect.value],
+    "Return exactly one version.",
+    "Return only the rewritten text. Do not add labels, explanations, quotes, or markdown fences."
+  ].join("\n");
+}
+
+function buildChromeSharedContext() {
+  const language = getSelectedLanguage();
+  const languageContext = language.code
+    ? `Input and output language: ${language.promptName}.`
+    : "Detect the input language and keep the output in the same language.";
+
+  return [
+    "Rewrite multilingual text for grammar, clarity, and natural phrasing.",
+    languageContext,
+    "Preserve meaning. Do not translate. Return only one clean rewritten version."
+  ].join(" ");
 }
 
 function getRewriterOptions() {
-  return {
+  const language = getSelectedLanguage();
+  const options = {
     tone: toneSelect.value,
     format: "plain-text",
     length: lengthSelect.value,
-    sharedContext:
-      "Rewrite the user's text. Fix grammar if needed, preserve the original meaning, and make the result natural. Return only the rewritten text."
+    sharedContext: buildChromeSharedContext()
   };
+
+  if (language.code) {
+    options.expectedInputLanguages = [language.code];
+    options.expectedContextLanguages = ["en", language.code];
+    options.outputLanguage = language.code;
+  }
+
+  return options;
+}
+
+function getChromeFailureMessage() {
+  return [
+    "Chrome AI chưa dùng được trên trình duyệt hoặc thiết bị này.",
+    "Hãy bật các Chrome flags bên dưới rồi mở lại Chrome, hoặc chuyển sang Gemini nếu bạn có API key."
+  ].join(" ");
 }
 
 async function generateWithRewriter(text) {
   if (!("Rewriter" in self)) {
-    throw new Error("Rewriter API chưa được bật. Bật chrome://flags/#rewriter-api-for-gemini-nano rồi relaunch Chrome.");
+    throw new Error("Chrome chưa hỗ trợ công cụ sửa câu chính.");
   }
 
   const options = getRewriterOptions();
   const availability = await Rewriter.availability(options);
 
   if (availability === "unavailable") {
-    throw new Error("Rewriter API đang unavailable trên Chrome/máy này.");
+    throw new Error("Công cụ sửa câu chính chưa khả dụng.");
   }
 
   const rewriter = await Rewriter.create({
@@ -194,14 +263,14 @@ async function generateWithRewriter(text) {
         const loaded = typeof event.loaded === "number" ? event.loaded : 0;
         const total = typeof event.total === "number" && event.total > 0 ? event.total : 1;
         const percent = Math.min(100, Math.round((loaded / total) * 100));
-        setStatus(`đang tải model... ${percent}%`);
+        setStatus(`đang tải AI trên máy... ${percent}%`);
       });
     }
   });
 
   try {
     return await rewriter.rewrite(text, {
-      context: "Return only one polished rewritten version. No explanation, no title."
+      context: buildInstruction()
     });
   } finally {
     if (typeof rewriter.destroy === "function") {
@@ -212,29 +281,29 @@ async function generateWithRewriter(text) {
 
 async function generateWithPromptApiFallback(text) {
   if (!("LanguageModel" in self)) {
-    throw new Error("Chrome này chưa có Prompt API/LanguageModel để fallback.");
+    throw new Error("Chrome chưa có chế độ sửa dự phòng.");
   }
 
   const availability = await LanguageModel.availability();
 
   if (availability === "unavailable") {
-    throw new Error("Prompt API đang unavailable trên Chrome/máy này.");
+    throw new Error("Chế độ sửa dự phòng chưa khả dụng.");
   }
 
   const session = await LanguageModel.create({
-    systemPrompt: editorPrompt,
+    systemPrompt: buildInstruction(),
     monitor(monitor) {
       monitor.addEventListener("downloadprogress", event => {
         const loaded = typeof event.loaded === "number" ? event.loaded : 0;
         const total = typeof event.total === "number" && event.total > 0 ? event.total : 1;
         const percent = Math.min(100, Math.round((loaded / total) * 100));
-        setStatus(`đang tải model... ${percent}%`);
+        setStatus(`đang tải AI trên máy... ${percent}%`);
       });
     }
   });
 
   try {
-    return await session.prompt(`User input:\n${text}`);
+    return await session.prompt(`Text:\n${text}`);
   } finally {
     if (typeof session.destroy === "function") {
       session.destroy();
@@ -242,62 +311,56 @@ async function generateWithPromptApiFallback(text) {
   }
 }
 
-async function generateWithChromeBuiltInAI(text) {
+async function generateWithChromeAI(text) {
   try {
     return await generateWithRewriter(text);
   } catch (rewriterError) {
     console.warn(rewriterError);
-    setStatus("Rewriter fail, đang thử Prompt API fallback...");
+    setStatus("Cách sửa chính chưa chạy được, đang thử cách khác bằng Chrome AI...");
+  }
+
+  try {
     return await generateWithPromptApiFallback(text);
+  } catch (fallbackError) {
+    console.warn(fallbackError);
+    throw new Error(getChromeFailureMessage());
   }
 }
 
-async function generateWithCloudApi(text) {
-  apiKey = apiKeyInput.value.trim();
+async function generateWithGemini(text) {
+  if (!navigator.onLine) {
+    throw new Error("Gemini cần mạng. Thiết bị đang offline.");
+  }
+
+  const apiKey = apiKeyInput.value.trim();
+
   if (!apiKey) {
-    alert("API key đâu?");
     apiKeyInput.focus();
-    return "";
+    throw new Error("Nhập Gemini API key trước đã.");
   }
 
   saveApiKey(apiKey);
 
-  modelName = modelSelect.value;
-  modelType = modelName.startsWith("gemini") ? "gemini" : "gpt";
-
-  let content = "";
-  let response;
-
-  if (modelType === "gpt") {
-    response = await fetch(openAIEndpoint, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`
-      },
-      body: JSON.stringify({
-        model: modelName,
-        messages: [
-          { role: "system", content: editorPrompt },
-          { role: "user", content: text }
-        ],
-        temperature: 0.7
-      })
-    });
-  } else {
-    response = await fetch(`${geminiEndpoint}/${modelName}:generateContent?key=${apiKey}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [
-          {
-            role: "user",
-            parts: [{ text: `${editorPrompt}\n\nUser input:\n${text}` }]
-          }
-        ]
-      })
-    });
-  }
+  const modelName = geminiModelSelect.value;
+  const response = await fetch(`${GEMINI_ENDPOINT}/${modelName}:generateContent?key=${apiKey}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      contents: [
+        {
+          role: "user",
+          parts: [
+            {
+              text: `${buildInstruction()}\n\nText:\n${text}`
+            }
+          ]
+        }
+      ],
+      generationConfig: {
+        temperature: 0.3
+      }
+    })
+  });
 
   const data = await response.json();
 
@@ -305,13 +368,7 @@ async function generateWithCloudApi(text) {
     throw new Error(data.error?.message || data.error?.code || `HTTP Error ${response.status}`);
   }
 
-  if (modelType === "gpt") {
-    content = data.choices?.[0]?.message?.content?.trim() || "";
-  } else {
-    content = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "";
-  }
-
-  return content;
+  return data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "";
 }
 
 async function generateText() {
@@ -319,15 +376,15 @@ async function generateText() {
   if (!text) return;
 
   resultContainer.innerHTML = "";
-  setStatus(isBuiltInMode() ? "đang xử lý local bằng Chrome Built-in AI..." : "đang xử lý cloud...");
+  setStatus(isChromeMode() ? "đang xử lý bằng Chrome AI..." : "đang xử lý bằng Gemini...");
   generateBtn.disabled = true;
 
   try {
-    const content = isBuiltInMode()
-      ? await generateWithChromeBuiltInAI(text)
-      : await generateWithCloudApi(text);
+    const content = isChromeMode()
+      ? await generateWithChromeAI(text)
+      : await generateWithGemini(text);
 
-    if (content) renderResults(content);
+    renderResult(content);
   } catch (err) {
     console.error(err);
     setStatus("");
@@ -337,24 +394,38 @@ async function generateText() {
   }
 }
 
-apiKeyInput.addEventListener("keydown", e => {
-  if (e.key === "Enter") {
-    e.preventDefault();
+function registerServiceWorker() {
+  if (!("serviceWorker" in navigator)) return;
+
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("service-worker.js").catch(err => {
+      console.warn("Service worker registration failed:", err);
+    });
+  });
+}
+
+apiKeyInput.addEventListener("keydown", event => {
+  if (event.key === "Enter") {
+    event.preventDefault();
     userInput.focus();
   }
 });
 
-userInput.addEventListener("keydown", e => {
-  if (e.key === "Enter" && !e.shiftKey) {
-    e.preventDefault();
+userInput.addEventListener("keydown", event => {
+  if (event.key === "Enter" && !event.shiftKey) {
+    event.preventDefault();
     generateText();
   }
 });
 
 generateBtn.addEventListener("click", generateText);
-modelSelect.addEventListener("change", updateModeUI);
+engineSelect.addEventListener("change", updateModeUI);
+window.addEventListener("online", updateNetworkStatus);
+window.addEventListener("offline", updateNetworkStatus);
 
 document.addEventListener("DOMContentLoaded", () => {
   loadApiKey();
+  updateNetworkStatus();
   updateModeUI();
+  registerServiceWorker();
 });
