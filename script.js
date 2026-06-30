@@ -405,6 +405,17 @@ function registerServiceWorker() {
   });
 }
 
+function softCloseTab() {
+  window.open("", "_self");
+  window.close();
+
+  window.setTimeout(() => {
+    if (!window.closed) {
+      window.location.replace("about:blank");
+    }
+  }, 120);
+}
+
 function handleWindowControl(button) {
   const action = button.dataset.windowAction;
 
@@ -414,9 +425,7 @@ function handleWindowControl(button) {
   }, 120);
 
   if (action === "close") {
-    window.setTimeout(() => {
-      window.close();
-    }, 80);
+    window.setTimeout(softCloseTab, 80);
   }
 }
 
