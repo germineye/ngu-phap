@@ -1,11 +1,13 @@
-const CACHE_NAME = "ngu-phap-v4";
+const CACHE_NAME = "ngu-phap-v5";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./style.css",
   "./script.js",
   "./manifest.json",
-  "./favicon-96x96.png"
+  "./favicon-96x96.png",
+  "./icon-192x192.svg",
+  "./icon-512x512.svg"
 ];
 
 self.addEventListener("install", event => {
